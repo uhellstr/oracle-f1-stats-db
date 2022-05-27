@@ -1,0 +1,604 @@
+#!/usr/bin/env python
+
+r"""
+ _____ _
+|  ___/ |
+| |_  | |
+|  _| | |
+|_|   |_| official timing data for practice,qualification and races
+
+
+This python script will use the official F1 api that gives lots of
+additional information to complement the ergast API used in the F1 database
+
+Thru the API this python code will download the data to cache and then
+produce csv files for all timing data we have for practice,qualification and race sessions 
+since the start from 2018.
+
+This data can then be used for lots of analysis.
+
+Currently this python code supports
+
+- Use the F1 fast API and from the generated cache create csv files for lap times from practice,quali and races
+
+Todo: add weather data and maybe some other info like speed and gear that the formula1 race cars uses during there sessions.
+
+Depend on oraclepackage.py
+
+Note: You cannot use this data for commercial usage and apps. You can use it for your own personal analysis!!
+
+Ulf Hellstrom oraminute@gmail.com 2022-
+
+Before running this package:
+----------------------------
+Make sure you have Oracle instant client installed and can connect to the F1 Oracle database
+Make sure you have installed the cx_Oracle module for python and it is working.
+Make sure you install the fastf1,pandas,requests packages with pip or conda!
+create a directory called cache in the same directory where you put this code
+copy the subdiretory oraclepackage and it's content to the same directory that this code is runned from
+
+"""
+import fastf1 as ff1
+import re
+from datetime import datetime
+import sys
+import getpass
+import base64
+import os
+import time
+
+# Import oraclepackage module
+workingdir = os.getcwd()
+orapackdir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '')) + "/"
+sys.path.append(orapackdir)
+from oraclepackage import oramodule
+
+"""
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    Logger()
+    Logfunction that logs all output to screen to logfile.
+    Author: Ulf Hellstrom, oraminute@gmail.com
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+"""
+
+
+class Logger(object):
+    def __init__(self):
+        logfile = datetime.now().strftime('f1data_%Y_%m_%d_%H_%M.log')
+        self.terminal = sys.stdout
+        self.log = open(logfile, "a")
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)
+
+    def flush(self):
+        # this flush method is needed for python 3 compatibility.
+        # this handles the flush command by doing nothing.
+        # you might want to specify some extra behavior here.
+        pass
+
+
+"""
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    check_if_object_exists()
+    Check if object exists or not
+    Author: Ulf Hellstrom, oraminute@gmail.com
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+"""
+
+
+def check_if_object_exists(connection):
+    retval = False
+
+    sql_stmt = """
+select count(*) as antal
+from dba_objects
+where owner  = 'F1_DATA'
+  and  object_name = 'F1_OFFICIAL_TIMEDATA'
+  and object_type = 'TABLE'
+"""
+    c1 = connection.cursor()
+    c1.execute(sql_stmt)
+    # convert tuple to integer
+    value = int(c1.fetchone()[0])
+    if value > 0:
+        retval = True
+    c1.close()
+
+    return retval
+
+
+"""
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    check_if_race_exists()
+    Check if race exists or not
+    Author: Ulf Hellstrom, oraminute@gmail.com
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+"""
+
+
+def check_if_race_exists(connection, season, race, racetype):
+    retval = False
+
+    sql_stmt = """
+select count(*) as antal
+from f1_data.f1_official_timedata
+where season  = :season
+  and  race = :race
+  and racetype = :racetype
+"""
+    c1 = connection.cursor()
+    c1.execute(sql_stmt, [int(season), int(race), racetype])
+    # convert tuple to integer
+    value = int(c1.fetchone()[0])
+    if value > 0:
+        retval = True
+    c1.close()
+
+    if retval:
+        print("....debug..... race exists do not call REST")
+    else:
+        print("Did not find the race in the database........!!!!!!!!!!!!!!!!!!!!!")
+
+    return retval
+
+
+"""
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    Author: Ulf Hellstrom, oraminute@gmail.com
+    From the F1_DATA schema in the database fetch all seasons and races starting
+    with 2018 since this is the year Forumula started tp publish more telemetry.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+"""
+
+
+def get_f1_seasons_and_races(connection):
+    season_list = []
+    sql_stmt = """
+select season
+       ,round
+from f1_data.v_f1_races
+where to_number(season) >= 2018
+order by to_number(season),to_number(round) asc
+"""
+    c1 = connection.cursor()
+    c1.execute(sql_stmt)
+    res = c1.fetchall()
+    for row in res:
+        season = row[0]
+        race = row[1]
+        val = str(season) + "," + str(race)
+        season_list.append(val)
+    c1.close()
+
+    return season_list
+
+
+"""
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    Author: Ulf Hellstrom, oraminute@gmail.com
+    Check the database if a lap in FP1,FP2 etc is already loaded into the database.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+"""
+
+
+def check_lap_already_loaded(connection, season, race, racetype, lapnumber, team, driver):
+    retval = False
+
+    sql_stmt = """
+select count(*) as antal
+from f1_data.f1_official_timedata
+where season  = :season
+  and  race = :race
+  and racetype = :racetype
+  and lapnumber = :lapnumber
+  and team = :team
+  and driver = :driver
+"""
+    c1 = connection.cursor()
+    c1.execute(sql_stmt, [int(season), int(race), racetype, int(lapnumber), team, driver])
+    # convert tuple to integer
+    value = int(c1.fetchone()[0])
+    if value > 0:
+        retval = True
+    c1.close()
+
+    return retval
+
+
+"""
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    Author: Ulf Hellstrom, oraminute@gmail.com
+    Generate a list of csv files generated from f1fast api dataframes.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+"""
+
+
+def get_csv_files():
+    csv_list = []
+    path = workingdir
+
+    for file in os.listdir(path):
+        if file.endswith(".csv"):
+            if file not in ["data.csv", "temp.csv"]:
+                csv_list.append(file)
+
+    return csv_list
+
+
+"""
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    Author: Ulf Hellstrom, oraminute@gmail.com
+    Converting empty values e-g '' to int is not possible so we convert null values
+    that is reprenseted as '' in the csv files to a valid int 0
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+"""
+
+
+def empty_to_int(s):
+    return {'': '0'}.get(s.strip(), s)
+
+
+"""
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    Author: Ulf Hellstrom, oraminute@gmail.com
+    Telemtry data that is empty ends up as '', This will be invalid float
+    So in case of null values as empty strings we have to handle those in 
+    python by convert '' to 0.0 that is a valid float value.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+"""
+
+
+def empty_to_float(s):
+    return {'': '0.0'}.get(s.strip(), s)
+
+
+"""
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    Author: Ulf Hellstrom, oraminute@gmail.com
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+"""
+
+
+def insert_data_row(connection, line, row):
+    sql_stmt = """
+insert into f1_data.f1_official_timedata
+values(:season 
+    ,:race
+    ,:racetype
+    ,:datapoint
+    ,:time
+    ,:drivernumber
+    ,:laptime
+    ,:lapnumber
+    ,:stint	
+    ,:pitouttime
+    ,:pitintime
+    ,:sector1time
+    ,:sector2time
+    ,:sector3time
+    ,:sector1sessiontime
+    ,:sector2sessiontime
+    ,:sector3sessiontime
+    ,:speedi1
+    ,:speedi2
+    ,:speedfl
+    ,:speedst
+    ,:ispersonalbest
+    ,:compound
+    ,:tyrelife	
+    ,:freshtyre
+    ,:lapstarttime
+    ,:team
+    ,:driver
+    ,:trackstatus
+    ,:isaccurate)
+"""
+
+    print("Trying to load row:" + str(row))
+
+    """
+        Split up comma separated rows into columns and cleanup/fix correct datatypes and cleanup missing values
+    """
+    chunks = line.split(',')
+    _season = int(empty_to_int(chunks[0]))
+    _race = int(empty_to_int(chunks[1]))
+    _racetype = chunks[2]
+    _datapoint = int(empty_to_int(chunks[3]))
+    _time = chunks[4]
+    _drivernumber = int(empty_to_int(chunks[5]))
+    _laptime = chunks[6]
+    _lapnumber = int(float(empty_to_int(chunks[7])))
+    _stint = int(float(empty_to_int(chunks[8])))
+    _pitouttime = chunks[9]
+    _pitintime = chunks[10]
+    _sector1time = chunks[11]
+    _sector2time = chunks[12]
+    _sector3time = chunks[13]
+    _sector1sessiontime = chunks[14]
+    _sector2sessiontime = chunks[15]
+    _sector3sessiontime = chunks[16]
+    _speedi1 = float(empty_to_float(chunks[17]))
+    _speedi2 = float(empty_to_float(chunks[18]))
+    _speedfl = float(empty_to_float(chunks[19]))
+    _speedst = float(empty_to_float(chunks[20]))
+    _ispersonalbest = chunks[21]
+    _compound = chunks[22]
+    _tyrelife = float(empty_to_float(chunks[23]))
+    _freshtyre = chunks[24]
+    _lapstarttime = chunks[25]
+    _team = chunks[26]
+    _driver = chunks[27]
+    _trackstatus = int(empty_to_int(chunks[28]))
+    _isaccurate = chunks[29]
+
+    """
+        If data not already loaded into database insert the row!
+    """
+    if not check_lap_already_loaded(connection, _season, _race, _racetype, _lapnumber, _team, _driver):
+
+        """
+            A very few rows might have very corrupt data.. We try to pass those few lines...
+        """
+        try:
+            print("ROWDATA::::::::::::::")
+            print("=====================")
+            print("season:" + str(_season))
+            print("race:" + str(_race))
+            print("racetype:" + _racetype)
+            print("datapoint:" + str(_datapoint))
+            print("time:" + _time)
+            print("drivernumber:" + str(_drivernumber))
+            print("laptime:" + _laptime)
+            print("lapnumber:" + str(_lapnumber))
+            print("stint:" + str(_stint))
+            print("pitouttime:" + _pitouttime)
+            print("pitintime:" + _pitintime)
+            print("sector1time" + _sector1time)
+            print("sector2time:" + _sector2time)
+            print("sector3time:" + _sector3time)
+            print("sector1sessiontime:" + _sector1sessiontime)
+            print("sector2sessiontime:" + _sector2sessiontime)
+            print("sector3sessiontime:" + _sector3sessiontime)
+            print("speedi1:" + str(_speedi1))
+            print("speedi2:" + str(_speedi2))
+            print("speedfl:" + str(_speedfl))
+            print("speedst:" + str(_speedst))
+            print("ispersonalbest:" + _ispersonalbest)
+            print("compuond:" + _compound)
+            print("tyrelife:" + str(_tyrelife))
+            print("freshtyre:" + _freshtyre)
+            print("lapstarttime:" + _lapstarttime)
+            print("team:" + _team)
+            print("driver:" + _driver)
+            print("trackstatus:" + str(_trackstatus))
+            print("isaccurate:" + _isaccurate)
+
+            c1 = connection.cursor()
+            c1.execute(sql_stmt, [_season
+                , _race
+                , _racetype
+                , _datapoint
+                , _time
+                , _drivernumber
+                , _laptime
+                , _lapnumber
+                , _stint
+                , _pitouttime
+                , _pitintime
+                , _sector1time
+                , _sector2time
+                , _sector3time
+                , _sector1sessiontime
+                , _sector2sessiontime
+                , _sector3sessiontime
+                , _speedi1
+                , _speedi2
+                , _speedfl
+                , _speedst
+                , _ispersonalbest
+                , _compound
+                , _tyrelife
+                , _freshtyre
+                , _lapstarttime
+                , _team
+                , _driver
+                , _trackstatus
+                , _isaccurate])
+            connection.commit()
+            c1.close()
+
+        except:
+            pass
+    else:
+        print("INFO::: Season:" + str(_season) + ",race:" + str(_race) + ",racetype:" + _racetype + ",lapnumber:" + str(
+            _lapnumber) + "," + _team + "," + _driver + " already exists in database, skipping!!")
+
+
+"""
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    Author: Ulf Hellstrom, oraminute@gmail.com
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+"""
+
+
+def csv_to_database(connection, filename):
+    print("Working on file:" + filename)
+    print("::::::::::::::::::::::::::::")
+    data_file = open(filename, 'r')
+    rows = data_file.readlines()
+    count = 0
+    for line in rows:
+        count += 1
+        if count > 1:
+            insert_data_row(connection, line, count)
+    data_file.close()
+
+    """
+        Rename file we have loaded into database already
+    """
+    new_file_name = filename + "_loaded"
+    os.rename(filename, new_file_name)
+
+
+"""
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    Author: Ulf Hellstrom, oraminute@gmail.com
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+"""
+
+
+def gen_f1_telemetry_data_file(year, race, racetype):
+    filename = str(year) + "_" + str(race) + "_" + racetype + "_f1.csv"
+
+    # Enable the cache and fetch the qualification timings for this race
+
+    try:
+
+        ff1.Cache.enable_cache('cache')
+        telemetry = ff1.get_session(int(year), int(race), racetype)
+        laps = telemetry.load_laps(with_telemetry=True)
+
+        laps.to_csv('data.csv')
+
+        # Cleanup data so we can load it into a oracle database 
+
+        # open your csv and read as a text string
+        with open('data.csv', 'r') as f:
+            my_csv_text = f.read()
+
+        find_str = '0 days '
+        replace_str = ''
+
+        # substitute
+        new_csv_str = re.sub(find_str, replace_str, my_csv_text)
+
+        # open new file and save
+        new_csv_path = 'temp.csv'  # or whatever path and name you want
+        with open(new_csv_path, 'w') as f:
+            f.write(new_csv_str)
+
+        # Write a new file based on temp.csv with additional info
+
+        final_csv_file = open(filename, 'w')
+
+        # read temp.csv file and add season and race and type (Qualification or Race)
+
+        temp_file = open('temp.csv', 'r')
+        rows = temp_file.readlines()
+
+        count = 0
+        for line in rows:
+            count += 1
+            if count < 2:
+                new_line = "Year,Race,Racetype,Datapoint" + line
+                final_csv_file.write(new_line)
+            if count > 1:
+                new_line = str(year) + ',' + str(race) + ',' + racetype + ',' + line
+                final_csv_file.write(new_line)
+
+        final_csv_file.close()
+        temp_file.close()
+
+    except:
+        pass
+
+
+"""
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    Main starts here. Eg this is where we run the code
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+"""
+
+
+def main():
+    counter = 0
+
+    """
+    SET run_rest TO False to only load csv files without trying to call F1 telemtry and Ergast REST services. 
+    """
+    run_rest = True
+
+    # Give the hostname or scan-listener
+    tns = input("Please give hostname or scan-listener name: ")
+    # Get the TNS name
+    dbname = input("Give the TNS-string for DB to connect to: ")
+    # Get oracle user name 
+    username = input("Oracle Username: ")
+    # Get password and encrypt it
+    pwd = getpass.getpass(prompt="Please give " + username + " password: ")
+    pwd = base64.urlsafe_b64encode(pwd.encode('UTF-8)')).decode('ascii')
+    os.environ["DB_INFO"] = pwd
+    tnsport = input("Give Listener port default (1521): ")
+    # Enable logging output to log file
+    sys.stdout = Logger()
+    if username.lower() == "sys":
+        print("Trying to connect to " + username + "/xxxxx@" + dbname + " as sysdba")
+    else:
+        print("Trying to connect to " + username + "/xxxxx@" + dbname)
+    connection = oramodule.get_oracle_connection(dbname, tns, tnsport, username,
+                                                 base64.urlsafe_b64decode(os.environ["DB_INFO"].encode('UTF-8')).decode(
+                                                     'ascii'))
+    print("Connection successfull")
+    print("Checking for F1_DATA.F1_OFFICIAL_TIMEDATA")
+    time.sleep(2)
+    if check_if_object_exists(connection):
+        print("F1_DATA.F1_OFFICIAL_TIMEDATA exists")
+    else:
+        print("Missing F1_DATA.F1_OFFICIAL_TIMEDATA please install extra objects...")
+
+    season_list = get_f1_seasons_and_races(connection)
+
+    if run_rest == True:
+
+        for val in season_list:
+            if counter > 195:
+                print("Ergast allows max 200 calls per hour.. try again in an hour")
+                break
+            year = oramodule.split_list(val, ',', 0)
+            race = oramodule.split_list(val, ',', 1)
+            racetype = 'FP1'
+            print("Fetching F1 official telemetry  data for: " + year + "," + race + "," + racetype)
+            if check_if_race_exists(connection, int(year), int(race), racetype) == False:
+                counter += 1
+                gen_f1_telemetry_data_file(year, race, 'FP1')
+            else:
+                print("Data for " + str(year) + " race " + str(race) + " already exists skipping...")
+            racetype = 'FP2'
+            if check_if_race_exists(connection, int(year), int(race), racetype) == False:
+                counter += 1
+                print("Fetching F1 official telemetry  data for: " + year + "," + race + "," + racetype)
+                gen_f1_telemetry_data_file(year, race, 'FP2')
+            else:
+                print("Data for " + str(year) + " race " + str(race) + " already exists skipping...")
+            racetype = 'FP3'
+            if check_if_race_exists(connection, int(year), int(race), racetype) == False:
+                counter += 1
+                print("Fetching F1 official telemetry  data for: " + year + "," + race + "," + racetype)
+                gen_f1_telemetry_data_file(year, race, 'FP3')
+            else:
+                print("Data for " + str(year) + " race " + str(race) + " already exists skipping...")
+            racetype = 'Q'
+            if check_if_race_exists(connection, int(year), int(race), racetype) == False:
+                counter += 1
+                print("Fetching F1 official telemetry  data for: " + year + "," + race + "," + racetype)
+                gen_f1_telemetry_data_file(year, race, 'Q')
+            else:
+                print("Data for " + str(year) + " race " + str(race) + " already exists skipping...")
+            racetype = 'R'
+            if check_if_race_exists(connection, int(year), int(race), racetype) == False:
+                counter += 1
+                print("Fetching F1 official telemetry  data for: " + year + "," + race + "," + racetype)
+                gen_f1_telemetry_data_file(year, race, racetype)
+            else:
+                print("Data for " + str(year) + " race " + str(race) + " already exists skipping...")
+
+    file_list = get_csv_files()
+    print("Loading data into the F1_DATA schema..")
+    for filename in file_list:
+        csv_to_database(connection, filename)
+
+
+if __name__ == "__main__":
+    main()
