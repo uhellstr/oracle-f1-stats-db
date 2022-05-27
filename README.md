@@ -197,6 +197,12 @@ SQL> @setup_objs.sql
  
 You will get some errors due to way the scripts where generated som indexes are duplicated. You can however just ignore them.
 
+# How to download the ergast data and built the database.
+      
+Check the F1_LOGIK schema it will have a scheduled job called 'AUTO_ERGAST_LOAD_JOB'
+You can run this manually to download the data and it will be called using dbms_scheduler once per day
+to check for new data or if the database is empty download all the historical races.
+
 ## How to use the data for analysis ?
 
 
