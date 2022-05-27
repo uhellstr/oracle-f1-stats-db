@@ -1,5 +1,5 @@
 REM
-REM Script should be runned as F1_ACCESS if planned to use AutoRest
+REM Script should be runned as F1_REST_ACCESS if planned to use AutoRest
 REM
 REM Get all objects with AutoRest enabled
 REM Metadata:
@@ -8,6 +8,22 @@ REM http://localhost:8080/ords/pdbutv1/f1_access/metadata-catalog/
 REM
 REM Below we have all views AutoRest enabled and some examples on how to query
 REM
+
+-- Rest Enable schema
+DECLARE
+  PRAGMA AUTONOMOUS_TRANSACTION;
+BEGIN
+
+    ORDS.ENABLE_SCHEMA(p_enabled => TRUE,
+                       p_schema => 'F1_REST_ACCESS',
+                       p_url_mapping_type => 'BASE_PATH',
+                       p_url_mapping_pattern => 'f1_access',
+                       p_auto_rest_auth => FALSE);
+
+    commit;
+
+END;
+/
 
 prompt V_F1_CONSTRUCTORS
 
@@ -20,7 +36,7 @@ REM http://localhost:8080/ords/pdbutv1/f1_access/constructors/?q={"constructorid
 BEGIN
   ORDS.enable_object (
     p_enabled      => TRUE, -- Default  { TRUE | FALSE }
-    p_schema       => 'F1_ACCESS',
+    p_schema       => 'F1_REST_ACCESS',
     p_object       => 'V_F1_CONSTRUCTORS',
     p_object_type  => 'VIEW', -- Default  { TABLE | VIEW }
     p_object_alias => 'constructors'
@@ -42,7 +58,7 @@ REM http://localhost:8080/ords/pdbutv1/f1_access/constructorstandings/?q={"seaso
 BEGIN
   ORDS.enable_object (
     p_enabled      => TRUE, -- Default  { TRUE | FALSE }
-    p_schema       => 'F1_ACCESS',
+    p_schema       => 'F1_REST_ACCESS',
     p_object       => 'V_F1_CONSTRUCTORSTANDINGS',
     p_object_type  => 'VIEW', -- Default  { TABLE | VIEW }
     p_object_alias => 'constructorstandings'
@@ -64,7 +80,7 @@ REM http://localhost:8080/ords/pdbutv1/f1_access/drivers/?q={"nationality":"Swed
 BEGIN
   ORDS.enable_object (
     p_enabled      => TRUE, -- Default  { TRUE | FALSE }
-    p_schema       => 'F1_ACCESS',
+    p_schema       => 'F1_REST_ACCESS',
     p_object       => 'V_F1_DRIVERS',
     p_object_type  => 'VIEW', -- Default  { TABLE | VIEW }
     p_object_alias => 'drivers'
@@ -79,7 +95,7 @@ prompt V_F1_DRIVERSTANDINGS
 BEGIN
   ORDS.enable_object (
     p_enabled      => TRUE, -- Default  { TRUE | FALSE }
-    p_schema       => 'F1_ACCESS',
+    p_schema       => 'F1_REST_ACCESS',
     p_object       => 'V_F1_DRIVERSTANDINGS',
     p_object_type  => 'VIEW', -- Default  { TABLE | VIEW }
     p_object_alias => 'driverstandings'
@@ -94,7 +110,7 @@ prompt V_F1_LAST_RACE_RESULTS
 BEGIN
   ORDS.enable_object (
     p_enabled      => TRUE, -- Default  { TRUE | FALSE }
-    p_schema       => 'F1_ACCESS',
+    p_schema       => 'F1_REST_ACCESS',
     p_object       => 'V_F1_LAST_RACE_RESULTS',
     p_object_type  => 'VIEW', -- Default  { TABLE | VIEW }
     p_object_alias => 'lastraceresults'
@@ -109,7 +125,7 @@ prompt V_F1_RACES
 BEGIN
   ORDS.enable_object (
     p_enabled      => TRUE, -- Default  { TRUE | FALSE }
-    p_schema       => 'F1_ACCESS',
+    p_schema       => 'F1_REST_ACCESS',
     p_object       => 'V_F1_RACES',
     p_object_type  => 'VIEW', -- Default  { TABLE | VIEW }
     p_object_alias => 'races'
@@ -124,7 +140,7 @@ prompt V_F1_SEASON
 BEGIN
   ORDS.enable_object (
     p_enabled      => TRUE, -- Default  { TRUE | FALSE }
-    p_schema       => 'F1_ACCESS',
+    p_schema       => 'F1_REST_ACCESS',
     p_object       => 'V_F1_SEASON',
     p_object_type  => 'VIEW', -- Default  { TABLE | VIEW }
     p_object_alias => 'seasons'
@@ -139,7 +155,7 @@ prompt V_F1_SEASONS_RACE_DATES
 BEGIN
   ORDS.enable_object (
     p_enabled      => TRUE, -- Default  { TRUE | FALSE }
-    p_schema       => 'F1_ACCESS',
+    p_schema       => 'F1_REST_ACCESS',
     p_object       => 'V_F1_SEASONS_RACE_DATES',
     p_object_type  => 'VIEW', -- Default  { TABLE | VIEW }
     p_object_alias => 'racedates'
@@ -154,7 +170,7 @@ prompt V_F1_TRACKS
 BEGIN
   ORDS.enable_object (
     p_enabled      => TRUE, -- Default  { TRUE | FALSE }
-    p_schema       => 'F1_ACCESS',
+    p_schema       => 'F1_REST_ACCESS',
     p_object       => 'V_F1_TRACKS',
     p_object_type  => 'VIEW', -- Default  { TABLE | VIEW }
     p_object_alias => 'tracks'
@@ -169,7 +185,7 @@ prompt V_F1_UPCOMING_RACES
 BEGIN
   ORDS.enable_object (
     p_enabled      => TRUE, -- Default  { TRUE | FALSE }
-    p_schema       => 'F1_ACCESS',
+    p_schema       => 'F1_REST_ACCESS',
     p_object       => 'V_F1_UPCOMING_RACES',
     p_object_type  => 'VIEW', -- Default  { TABLE | VIEW }
     p_object_alias => 'upcomingraces'
@@ -184,7 +200,7 @@ prompt V_MV_F1_LAP_TIMES
 BEGIN
   ORDS.enable_object (
     p_enabled      => TRUE, -- Default  { TRUE | FALSE }
-    p_schema       => 'F1_ACCESS',
+    p_schema       => 'F1_REST_ACCESS',
     p_object       => 'V_MV_F1_LAP_TIMES',
     p_object_type  => 'VIEW', -- Default  { TABLE | VIEW }
     p_object_alias => 'laptimes'
@@ -199,7 +215,7 @@ prompt V_MV_F1_QUALIFICATION_TIMES
 BEGIN
   ORDS.enable_object (
     p_enabled      => TRUE, -- Default  { TRUE | FALSE }
-    p_schema       => 'F1_ACCESS',
+    p_schema       => 'F1_REST_ACCESS',
     p_object       => 'V_MV_F1_QUALIFICATION_TIMES',
     p_object_type  => 'VIEW', -- Default  { TABLE | VIEW }
     p_object_alias => 'qualification'
@@ -214,7 +230,7 @@ prompt V_MV_F1_RESULTS
 BEGIN
   ORDS.enable_object (
     p_enabled      => TRUE, -- Default  { TRUE | FALSE }
-    p_schema       => 'F1_ACCESS',
+    p_schema       => 'F1_REST_ACCESS',
     p_object       => 'V_MV_F1_RESULTS',
     p_object_type  => 'VIEW', -- Default  { TABLE | VIEW }
     p_object_alias => 'results'
@@ -229,7 +245,7 @@ prompt V_F1_DATA_DRIVER_IMAGES
 BEGIN
   ORDS.enable_object (
     p_enabled      => TRUE, -- Default  { TRUE | FALSE }
-    p_schema       => 'F1_ACCESS',
+    p_schema       => 'F1_REST_ACCESS',
     p_object       => 'V_F1_DATA_DRIVER_IMAGES',
     p_object_type  => 'VIEW', -- Default  { TABLE | VIEW }
     p_object_alias => 'driverimages'
@@ -244,7 +260,7 @@ prompt V_F1_DATA_TRACK_IMAGES
 BEGIN
   ORDS.enable_object (
     p_enabled      => TRUE, -- Default  { TRUE | FALSE }
-    p_schema       => 'F1_ACCESS',
+    p_schema       => 'F1_REST_ACCESS',
     p_object       => 'V_F1_DATA_TRACK_IMAGES',
     p_object_type  => 'VIEW', -- Default  { TABLE | VIEW }
     p_object_alias => 'trackimages'
@@ -259,7 +275,7 @@ prompt V_F1_OFFICIAL_TIMEDATA
 BEGIN
   ORDS.enable_object (
     p_enabled      => TRUE, -- Default  { TRUE | FALSE }
-    p_schema       => 'F1_ACCESS',
+    p_schema       => 'F1_REST_ACCESS',
     p_object       => 'V_F1_OFFICIAL_TIMEDATA',
     p_object_type  => 'VIEW', -- Default  { TABLE | VIEW }
     p_object_alias => 'f1trackdata'

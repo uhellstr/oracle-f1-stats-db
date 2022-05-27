@@ -1,4 +1,4 @@
-This script will REST_ENABLE objects in F1_ACCESS schema that allow you
+This script will REST_ENABLE objects in F1_REST_ACCESS schema that allow you
 to replicate the functionality that ergast has. E.g you will be able
 to get the data from the different views as REST calls using Oracle Rest Data Services.
 
