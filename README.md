@@ -31,19 +31,19 @@ You also need ORDS installed and configured (see example below) to be able to ca
 Tim Hall's excelent site:
 https://oracle-base.com
 
-You can use a browser like Chromium, Safari, Firefox to call the published services but the demo also includes som examples made with the nodejs engine to show that you can call Oracle Rest enabled services from any language supporting JSON and REST calls. You could easy create a client in any language like python, ruby or even in C. See your platform for how to install node. (It's easy) if you intend to try out the node part of the code
+You can use a browser like Chromium, Safari, Firefox to call the published services but the demo also includes som examples made with the python jupyter notebooks to show that you can call Oracle Rest enabled services from any language supporting JSON and REST calls. You could easy create a client in any language like python, ruby or even in C. See your platform for how to install python or simply install anaconda that I personally think is the fastest way to get started.
 
 ## Configuring ORDS (Oracle Rest Data Services):
 
 a) Install Oracle Application Express (APEX) if not installed in the datbase you intend to run this demo against.
 
-Installing APEX normally done as SYS by running the following scripts from the catalog where you unzipped the downloaded apex zip file. Use sqlplus or sqlcl against either a pluggable database if you run this demo against 12c or higher or a normal database if below 12c. (Recommend atleast 11g as a minimum) If you don't have a database you will need to setup that first. 
+Installing APEX normally done as SYS by running the following scripts from the catalog where you unzipped the downloaded apex zip file. Use sqlplus or sqlcl against either a pluggable database if you run this demo against 12c or higher or a normal database if below 12c. (Recommend atleast 11g as a minimum) If you don't have a database you will need to setup that first. For a perfect introduction into Oracle i suggest 21c Express Editoin (XE) that is completly free. 21c XE is where I run my own Formula 1 database on. It has all the power you need to start to dig into the statistics around Formula 1.
 
 1. SQL>@apexins SYSAUX SYSAUX TEMP /i/
 2. SQL>@apex_rest_config (To setup APEX_LISTENER, APEX_REST_PUBLIC_USER that is a MUST for ORDS to work correctly)
 3. SQL>@apxchpwd (Setup the password for the internal workspace admin user)
 
-In this example we have installed Oracle 18c Express Edition as a demonstration environment. Since Oracle 18c uses multitenant by default
+In this example we have installed Oracle 21c Express Edition as a demonstration environment. Since Oracle 21c XE uses multitenant by default
 we have a containerdatabase XE and atleast one pluggable database XEPDB1 by default setup after installation. All configuration
 and installation is done against the pluggable database XEPDB1
 
@@ -60,11 +60,11 @@ You also need to enable APEX_PUBLIC_USER as:
 
 Also verify you can connect to the APEX_PUBLIC_USER.
 
-b) Create a catalog (you don't need to be the Oracle O/S user as long as you can run java) called ords and the following subcatalogs. In this example we have downloaded ORDS version 19. In this example we use the O/S user test that has it's home catalog in /home/test
+b) Create a catalog (you don't need to be the Oracle O/S user as long as you can run java) called ords and the following subcatalogs. In this example we have downloaded ORDS version 18. In this example we use the O/S user test that has it's home catalog in /home/test. I recommend you download as late version as possible. If you however go for the 22.1 version or newer you really have to read the documentation since the installation for that version is different then ORDS version 18-21.
 
 1. $ mkdir ords
 2. $ cd ords
-3. $ mkdir ords191
+3. $ mkdir ords181
 4. $ mkdir scripts
 5. $ mkdir logs
 6. $ mkdir configdir
@@ -82,7 +82,7 @@ Move the images.zip file to /home/test/ords and
 You should now have a images catalog also in /home/test/ords 
 
 Put the downloaded zip file with the latest ORDS version in the ords191 catalong and unzip it.
-1. $ cd ords191
+1. $ cd ords181
 2. $ unzip ords-18.10.0.092.1545.zip (Your file might have another name depending on version)
 
 c) Then we need to setup where ORDS is storing it's configuration files
@@ -122,7 +122,7 @@ startords:
 #!/bin/bash
 export PATH=/usr/sbin:/usr/local/bin:/usr/bin:/usr/local/sbin:$PATH
 LOGFILE=/home/test/ords/logs/ords-`date +"%Y""%m""%d"`.log
-cd /home/test/ords/ords191 
+cd /home/test/ords/ords181
 export JAVA_OPTIONS="-Dorg.eclipse.jetty.server.Request.maxFormContentSize=3000000"
 nohup java ${JAVA_OPTIONS} -jar ords.war standalone >> $LOGFILE 2>&1 &
 echo "View log file with : tail -f $LOGFILE"
@@ -208,4 +208,7 @@ to check for new data or if the database is empty download all the historical ra
 
 I have provided a SQL script called "queries.sql" you can use for start analysing the data. I also provided a number of materialized views that speeds up some queries due to minimize parsing time when joining different tables with each others.
 
-There is also som additional script for handling ORDS AutoRest (E.g publish back the relational data as REST services). Scripts for allowing other users then F1_ACCESS to access data thru views and som python scripts for loading images of drivers,tracks etc and Jupyter Notebook examples on how to plot graphs using pandas and mathplotlib for the Formula 1 2021 season. See the included README_FIRST.txt for more information.
+There is also som additional script for handling ORDS AutoRest written in python and python jupyter notebooks (E.g publish back the relational data as REST services). Scripts for allowing other users then F1_ACCESS to access data thru views and som python scripts for loading images of drivers,tracks etc and Jupyter Notebook examples on how to plot graphs using pandas and mathplotlib for the Formula 1 2021 season. See the included README_FIRST.txt for more information.
+      
+Enjoy and don't forget to travel to a formula 1 race. It will change your life forever!
+      
