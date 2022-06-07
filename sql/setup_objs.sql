@@ -189,5 +189,9 @@ grant execute on f1_logik.to_millis to f1_access;
 grant execute on f1_logik.get_cur_f1_season to f1_access;
 grant execute on f1_logik.get_check_season to f1_access;
 grant execute on f1_logik.get_last_race to f1_access;
+grant execute on f1_logik.to_millis to f1_rest_access;
+grant execute on f1_logik.get_cur_f1_season to f1_rest_access;
+grant execute on f1_logik.get_check_season to f1_rest_access;
+grant execute on f1_logik.get_last_race to f1_rest_access;
 
 @F1_DATA_SCHEDULER.sql

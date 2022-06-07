@@ -869,6 +869,9 @@ order by vfr.season,vfr.race asc;
 
 -- Extra with official telemetry from Formula 1
 
+
+-- From official F1 timedata if we have it loaded into our database
+-- get the qualification results for the last race
 select
     vfo.season,
     vfo.race,
@@ -903,8 +906,9 @@ select
     vfo.isaccurate
 from
     f1_access.v_f1_official_timedata vfo
-where vfo.season = 2022
-  and vfo.race = 6
+where vfo.season = f1_logik.get_cur_f1_season
+  and vfo.race = f1_logik.get_last_race
   and vfo.racetype = 'Q'
   and vfo.ispersonalbest = 'True'
 order by f1_logik.to_millis(vfo.laptime);
+

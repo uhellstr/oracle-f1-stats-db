@@ -284,3 +284,93 @@ BEGIN
   COMMIT;
 END;
 /
+
+prompt v_f1_cur_season_standings
+
+BEGIN
+  ORDS.enable_object (
+    p_enabled      => TRUE, -- Default  { TRUE | FALSE }
+    p_schema       => 'F1_REST_ACCESS',
+    p_object       => 'V_F1_CUR_SEASON_STANDINGS',
+    p_object_type  => 'VIEW', -- Default  { TABLE | VIEW }
+    p_object_alias => 'f1season_standings'
+  );
+    
+  COMMIT;
+END;
+/
+
+prompt v_f1_last_race_winners
+
+BEGIN
+  ORDS.enable_object (
+    p_enabled      => TRUE, -- Default  { TRUE | FALSE }
+    p_schema       => 'F1_REST_ACCESS',
+    p_object       => 'V_F1_LAST_RACE_WINNERS',
+    p_object_type  => 'VIEW', -- Default  { TABLE | VIEW }
+    p_object_alias => 'f1lastracewinners'
+  );
+    
+  COMMIT;
+END;
+/
+
+prompt v_f1_last_race_qualifiers
+
+BEGIN
+  ORDS.enable_object (
+    p_enabled      => TRUE, -- Default  { TRUE | FALSE }
+    p_schema       => 'F1_REST_ACCESS',
+    p_object       => 'V_F1_LAST_RACE_QUALIFIERS',
+    p_object_type  => 'VIEW', -- Default  { TABLE | VIEW }
+    p_object_alias => 'f1lastracequalification'
+  );
+    
+  COMMIT;
+END;
+/
+
+prompt v_f1_dominating_teams
+
+BEGIN
+  ORDS.enable_object (
+    p_enabled      => TRUE, -- Default  { TRUE | FALSE }
+    p_schema       => 'F1_REST_ACCESS',
+    p_object       => 'V_F1_DOMINATING_TEAMS',
+    p_object_type  => 'VIEW', -- Default  { TABLE | VIEW }
+    p_object_alias => 'f1dominatingteams'
+  );
+    
+  COMMIT;
+END;
+/
+
+prompt v_f1_cur_season_polesitters
+
+BEGIN
+  ORDS.enable_object (
+    p_enabled      => TRUE, -- Default  { TRUE | FALSE }
+    p_schema       => 'F1_REST_ACCESS',
+    p_object       => 'V_F1_CUR_SEASON_POLESITTERS',
+    p_object_type  => 'VIEW', -- Default  { TABLE | VIEW }
+    p_object_alias => 'f1polesitters'
+  );
+    
+  COMMIT;
+END;
+/
+
+prompt v_f1_constructor_champions
+
+BEGIN
+  ORDS.enable_object (
+    p_enabled      => TRUE, -- Default  { TRUE | FALSE }
+    p_schema       => 'F1_REST_ACCESS',
+    p_object       => 'V_F1_CONSTRUCTOR_CHAMPIONS',
+    p_object_type  => 'VIEW', -- Default  { TABLE | VIEW }
+    p_object_alias => 'f1teamchampions'
+  );
+    
+  COMMIT;
+END;
+/
