@@ -155,8 +155,9 @@ def get_f1_seasons_and_races(connection):
     """
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     Author: Ulf Hellstrom, oraminute@gmail.com
-    From the F1_DATA schema in the database fetch all seasons and races starting
-    with 2018 since this is the year Forumula started tp publish more telemetry.
+    From the F1_DATA schema in the database fetch all seasons and racedates
+    minus 2 days to cover for practice and qualification.
+    Note: Before 2018 there waas no extended official F1 telemetry.
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     """
     season_list = []
@@ -167,7 +168,7 @@ from f1_data.v_f1_races vfr
 inner join f1_data.v_f1_seasons_race_dates vfd
 on (vfr.season = vfd.season and vfr.round = vfd.round)
 where to_number(vfr.season) >= 2018
-  and to_date(vfd.race_date,'RRRR-MM-DD') <= trunc(sysdate)
+  and to_date(vfd.race_date,'RRRR-MM-DD')-2  <= trunc(sysdate)
 order by to_number(vfr.season),to_number(vfr.round) asc
 """
     cur1 = connection.cursor()
@@ -493,6 +494,69 @@ def gen_f1_telemetry_data_file(year, race, racetype):
         pass
 
 
+def gen_f1_weather_data_file(year, race, racetype):
+    """
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    Author: Ulf Hellstrom, oraminute@gmail.com
+    Load weather data for current session.
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    """
+    filename = str(year) + "_" + str(race) + "_" + racetype + "_weather_f1.csv"
+
+    # Enable the cache and fetch the qualification timings for this race
+
+    try:
+
+        ff1.Cache.enable_cache('cache')
+
+        session = ff1.get_session(int(year), int(race), racetype)
+        session.load()
+        weather = session.weather_data
+        weather.to_csv('data.csv')
+
+        # Cleanup data so we can load it into a oracle database
+
+        # open your csv and read as a text string
+        with open('data.csv', 'r') as infile:
+            my_csv_text = infile.read()
+
+        find_str = '0 days '
+        replace_str = ''
+
+        # substitute
+        new_csv_str = re.sub(find_str, replace_str, my_csv_text)
+
+        # open new file and save
+        new_csv_path = 'temp.csv'  # or whatever path and name you want
+        with open(new_csv_path, 'w') as outfile:
+            outfile.write(new_csv_str)
+
+        # Write a new file based on temp.csv with additional info
+
+        final_csv_file = open(filename, 'w')
+
+        # read temp.csv file and add season and race and type (Qualification or Race)
+
+        temp_file = open('temp.csv', 'r')
+        rows = temp_file.readlines()
+
+        count = 0
+        for line in rows:
+            count += 1
+            if count < 2:
+                new_line = "Year,Race,Racetype,Datapoint" + line
+                final_csv_file.write(new_line)
+            if count > 1:
+                new_line = str(year) + ',' + str(race) + ',' + racetype + ',' + line
+                final_csv_file.write(new_line)
+
+        final_csv_file.close()
+        temp_file.close()
+
+    except:
+        pass
+
+
 def main():
     """
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -503,7 +567,13 @@ def main():
 
     # Set run_rest TO False to only load csv files without
     # trying to call F1 and Ergast REST services.
-    run_rest = True
+
+    if len(sys.argv) > 1:
+        print("Only loading not processed csv files!")
+        run_rest = False
+    else:
+        pirnt("Will try to get data from ergast and F1 telemetry..")
+        run_rest = True
 
     # Give the hostname or scan-listener
     tns = input("Please enter hostname or scan-listener name: ")
@@ -522,11 +592,8 @@ def main():
         print("Trying to connect to " + username + "/xxxxx@" + dbname + " as sysdba")
     else:
         print("Trying to connect to " + username + "/xxxxx@" + dbname)
-    connection = ora.get_oracle_connection(dbname
-                                                 , tns
-                                                 , tnsport
-                                                 , username
-                                                 , base64.urlsafe_b64decode(os.environ["DB_INFO"].encode('UTF-8')).decode('ascii'))
+    db_pwd=base64.urlsafe_b64decode(os.environ["DB_INFO"].encode('UTF-8')).decode('ascii')
+    connection=ora.get_oracle_connection(dbname, tns , tnsport , username , db_pwd)
     print("Connection successfull")
     print("Checking for F1_DATA.F1_OFFICIAL_TIMEDATA")
     time.sleep(2)
@@ -540,9 +607,9 @@ def main():
     if run_rest is True:
 
         for val in season_list:
-            if counter > 195:
-                print("Ergast allows max 200 calls per hour.. try again in an hour")
-                break
+            #if counter > 195:
+            #    print("Ergast allows max 200 calls per hour.. try again in an hour")
+            #    break
             year = ora.split_list(val, ',', 0)
             race = ora.split_list(val, ',', 1)
             racetype = 'FP1'
@@ -550,6 +617,7 @@ def main():
             if check_if_race_exists(connection, int(year), int(race), racetype) is False:
                 counter += 1
                 gen_f1_telemetry_data_file(year, race, 'FP1')
+                gen_f1_weather_data_file(year, race, 'FP1')
             else:
                 print("Data for " + str(year) + " race " + str(race) + " already exists skipping...")
             racetype = 'FP2'
@@ -557,6 +625,7 @@ def main():
                 counter += 1
                 print("Fetching F1 official telemetry  data for: " + year + "," + race + "," + racetype)
                 gen_f1_telemetry_data_file(year, race, 'FP2')
+                gen_f1_weather_data_file(year, race, 'FP2')
             else:
                 print("Data for " + str(year) + " race " + str(race) + " already exists skipping...")
             racetype = 'FP3'
@@ -564,6 +633,7 @@ def main():
                 counter += 1
                 print("Fetching F1 official telemetry  data for: " + year + "," + race + "," + racetype)
                 gen_f1_telemetry_data_file(year, race, 'FP3')
+                gen_f1_weather_data_file(year, race, 'FP3')
             else:
                 print("Data for " + str(year) + " race " + str(race) + " already exists skipping...")
             racetype = 'Q'
@@ -571,6 +641,7 @@ def main():
                 counter += 1
                 print("Fetching F1 official telemetry  data for: " + year + "," + race + "," + racetype)
                 gen_f1_telemetry_data_file(year, race, 'Q')
+                gen_f1_weather_data_file(year, race, 'Q')
             else:
                 print("Data for " + str(year) + " race " + str(race) + " already exists skipping...")
             racetype = 'R'
@@ -578,13 +649,17 @@ def main():
                 counter += 1
                 print("Fetching F1 official telemetry  data for: " + year + "," + race + "," + racetype)
                 gen_f1_telemetry_data_file(year, race, racetype)
+                gen_f1_weather_data_file(year, race, racetype)
             else:
                 print("Data for " + str(year) + " race " + str(race) + " already exists skipping...")
 
     file_list = get_csv_files()
     print("Loading data into the F1_DATA schema..")
     for filename in file_list:
-        csv_to_database(connection, filename)
+        print(filename)
+        match = re.findall("weather", filename)
+        if not match:
+            csv_to_database(connection, filename)
 
 
 if __name__ == "__main__":
