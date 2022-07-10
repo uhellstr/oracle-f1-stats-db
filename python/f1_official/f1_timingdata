@@ -572,7 +572,7 @@ def main():
         print("Only loading not processed csv files!")
         run_rest = False
     else:
-        pirnt("Will try to get data from ergast and F1 telemetry..")
+        print("Will try to get data from ergast and F1 telemetry..")
         run_rest = True
 
     # Give the hostname or scan-listener
