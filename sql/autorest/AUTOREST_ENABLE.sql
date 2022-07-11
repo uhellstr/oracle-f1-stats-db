@@ -285,6 +285,20 @@ BEGIN
 END;
 /
 
+prompt V_F1_OFFICIAL_WEATHER
+
+BEGIN
+  ORDS.enable_object (
+    p_enabled      => TRUE, -- Default  { TRUE | FALSE }
+    p_schema       => 'F1_REST_ACCESS',
+    p_object       => 'V_F1_OFFICIAL_WEATHER',
+    p_object_type  => 'VIEW', -- Default  { TABLE | VIEW }
+    p_object_alias => 'f1weatherdata'
+  );
+    
+  COMMIT;
+END;
+/
 prompt v_f1_cur_season_standings
 
 BEGIN

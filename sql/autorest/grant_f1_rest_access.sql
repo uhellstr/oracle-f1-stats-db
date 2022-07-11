@@ -32,6 +32,7 @@ grant select on F1_DATA.MV_F1_LAP_TIMES to f1_rest_access   ;
 grant select on F1_DATA.MV_F1_QUALIFICATION_TIMES to f1_rest_access   ;
 grant select on F1_DATA.MV_F1_RESULTS to f1_rest_access   ;
 grant select on F1_DATA.f1_official_timedata to f1_rest_access ;
+grant select on F1_DATA.f1_official_weather to f1_rest_access ;
 
 create or replace view f1_rest_access.V_F1_OFFICIAL_TIMEDATA as select * from F1_DATA.f1_official_timedata;
 create or replace view f1_rest_access.V_MV_F1_QUALIFICATION_TIMES as select * from F1_DATA.MV_F1_QUALIFICATION_TIMES;
@@ -52,6 +53,8 @@ create or replace view f1_rest_access.V_F1_SEASONS_RACE_DATES as select * from F
 create or replace view f1_rest_access.V_F1_TRACKS as select * from F1_DATA.V_F1_TRACKS;
 create or replace view f1_rest_access.V_F1_UPCOMING_RACES as select * from F1_DATA.V_F1_UPCOMING_RACES;
 create or replace view f1_rest_access.V_MV_F1_LAP_TIMES as select * from F1_DATA.MV_F1_LAP_TIMES;
+create or replace view f1_rest_access.V_F1_OFFICIAL_TIMEDATA as select * from F1_DATA.F1_OFFICIAL_TIMEDATA ;
+create or replace view f1_rest_access.V_F1_OFFICIAL_WEATHER as select * from F1_DATA.F1_OFFICIAL_WEATHER ;
 
 -- Extra rest enabled views taken from the demo queries and restified
 
