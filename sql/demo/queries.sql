@@ -769,6 +769,7 @@ group by f1r.circuitname,
          f1r.nationality
 ) order by number_of_wins desc;
 
+
 -- Get ditinct statuses
 select distinct(status)
 from f1_access.v_mv_f1_results
@@ -867,8 +868,9 @@ where vfr.season = (select min(a.season) from v_mv_f1_results a
   and vfr.position < 4                    
 order by vfr.season,vfr.race asc;
 
--- Extra with official telemetry from Formula 1
-
+-- *******************************************************************************
+-- Extra with official telemetry (if you loaded that with Python)  from Formula 1
+-- *******************************************************************************
 
 -- From official F1 timedata if we have it loaded into our database
 -- get the qualification results for the last race
