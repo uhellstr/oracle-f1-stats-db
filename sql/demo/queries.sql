@@ -6,11 +6,10 @@
 
 -- If you need more data for dbms_xplan
 
-alter session set statistics_level=ALL;
+--alter session set statistics_level=ALL;
 
--- This is needed since ergast returns data witth decimal '.'
-
-alter session set nls_numeric_characters = '.,';
+-- This might be needed since ergast returns data with decimal '.'
+--alter session set nls_numeric_characters = '.,';
 
 -- Tracks and races in order by season and race
 select vr.season
@@ -148,6 +147,43 @@ where f1l.season = f1_logik.get_cur_f1_season
 group by f1_drivers.driverid,f1l.position
 ) order by  position asc,laps_hold_position desc, driverid asc;
 
+-- Get the dominating driver for each season (e.g driver with most wins.)
+select
+  season,
+  pilotnr,
+  wins,
+  positiontext,
+  driverid,
+  givenname,
+  familyname,
+  nationality,
+  constructorname
+from
+(
+select
+  season,
+  pilotnr,
+  count(position) as wins,
+  positiontext,
+  driverid,
+  givenname,
+  familyname,
+  nationality,
+  constructorname
+from v_mv_f1_results
+where position  = 1
+group by   
+  season,
+  pilotnr,
+  positiontext,
+  driverid,
+  givenname,
+  familyname,
+  nationality,
+  constructorname
+)
+order by wins desc;
+
 -- Get the dominating teams for each season
 with f1_wins as
 (
@@ -183,6 +219,7 @@ group by x.season
          ,x.constructornationality
          ,x.constructorinfo
 ) order by season desc, wins desc;
+
 
 -- Show us the polesitters for the current season or last race
 -- for last season if between seasons.
