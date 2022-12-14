@@ -9,7 +9,7 @@
 --alter session set statistics_level=ALL;
 
 -- This might be needed since ergast returns data with decimal '.'
---alter session set nls_numeric_characters = '.,';
+alter session set nls_numeric_characters = '.,';
 
 -- Tracks and races in order by season and race
 select vr.season
@@ -218,7 +218,7 @@ group by x.season
          ,x.constructorname
          ,x.constructornationality
          ,x.constructorinfo
-) order by season desc, wins desc;
+) order by to_number(season) desc, wins desc;
 
 
 -- Show us the polesitters for the current season or last race
