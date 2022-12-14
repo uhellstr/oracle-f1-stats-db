@@ -83,7 +83,7 @@ begin
 end to_millis;
 /
 
-create or replace function          get_cur_f1_season 
+create or replace function  f1_logik.get_cur_f1_season 
 (
   p_in_cur_year in varchar2 default to_char(current_date,'RRRR') 
 ) 
