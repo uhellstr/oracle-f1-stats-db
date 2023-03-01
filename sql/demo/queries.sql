@@ -77,7 +77,7 @@ from
   f1_access.v_mv_f1_results vfr
 where vfr.season = f1_logik.get_cur_f1_season
   and position is not null
-  and vfr.race = f1_logik.get_last_race
+  and vfr.race = f1_logik.get_last_race(f1_logik.get_cur_f1_season)
 order by to_number(vfr.position) asc
 fetch first 10 rows only;
 
@@ -123,7 +123,7 @@ from
   f1_access.v_mv_f1_qualification_times vfq
 where vfq.season = f1_logik.get_cur_f1_season
   and position is not null
-  and to_number(round) = f1_logik.get_last_race
+  and to_number(round) = f1_logik.get_last_race(f1_logik.get_cur_f1_season)
 order by to_number(position) asc;
 
 -- Check number of laps a driver hold a certain position on track in the current season
