@@ -911,6 +911,7 @@ order by vfr.season,vfr.race asc;
 
 -- From official F1 timedata if we have it loaded into our database
 -- get the qualification results for the last race
+
 select
     vfo.season,
     vfo.race,
@@ -946,8 +947,55 @@ select
 from
     f1_access.v_f1_official_timedata vfo
 where vfo.season = f1_logik.get_cur_f1_season
-  and vfo.race = f1_logik.get_last_race
+  and vfo.race = f1_logik.get_last_race(f1_logik.get_cur_f1_season)
   and vfo.racetype = 'Q'
+  and vfo.ispersonalbest = 'True'
+order by f1_logik.to_millis(vfo.laptime);
+
+--
+-- Qualification tests in FP2 first race season 2023 with official F1 data.
+--
+select
+    vfo.season,
+    vfo.race,
+    vfo.racetype,
+    --datapoint,
+    --time,
+    vfo.drivernumber,
+    vfo.team,
+    vfo.driver,
+    vfd.givenname,
+    vfd.familyname,
+    vfo.laptime,
+    f1_logik.to_millis(vfo.laptime) as millis,
+    vfo.lapnumber,
+    vfo.stint,
+    --pitouttime,
+    --pitintime,
+    vfo.sector1time,
+    vfo.sector2time,
+    vfo.sector3time,
+    vfo.sector1sessiontime,
+    vfo.sector2sessiontime,
+    vfo.sector3sessiontime,
+    vfo.speedi1,
+    vfo.speedi2,
+    vfo.speedfl,
+    vfo.speedst,
+    vfo.ispersonalbest,
+    vfo.compound,
+    vfo.tyrelife,
+    vfo.freshtyre,
+    vfo.lapstarttime,
+    vfo.trackstatus,
+    vfo.isaccurate
+from
+    f1_access.v_f1_official_timedata vfo
+inner join f1_access.v_f1_drivers vfd
+on vfo.driver = vfd.code
+where vfo.season = 2023
+  and vfo.race = 1
+  and vfo.racetype = 'FP2'
   and vfo.ispersonalbest = 'True'
 order by f1_logik.to_millis(vfo.laptime);
 
