@@ -90,6 +90,44 @@ class Logger(object):
         pass
 
 
+def file_exists(file_path):
+    """
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    Author: Ulf Hellstrom, oraminute@gmail.com
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    """
+
+    return os.path.isfile(file_path)
+
+
+def remove_file(file_path):
+    """
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    Author: Ulf Hellstrom, oraminute@gmail.com
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    """
+
+    try:
+        os.remove(file_path)
+        print(f"File {file_path} successfully deleted.")
+    except OSError as error:
+        print(f"Error deleting file {file_path}: {error}")
+
+
+def only_empty_lines(file_path):
+    """
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    Author: Ulf Hellstrom, oraminute@gmail.com
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    """
+
+    with open(file_path, 'r') as f:
+        for line in f:
+            if line.strip() != '':
+                return False
+    return True
+
+
 def check_if_object_exists(connection):
     """
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -317,7 +355,7 @@ def get_csv_files():
 
     for file in os.listdir(path):
         if file.endswith(".csv"):
-            if file not in ["data.csv", "temp.csv"]:
+            if file not in ["data.csv", "temp.csv","middlefile.csv"]:
                 csv_list.append(file)
 
     return csv_list
@@ -597,23 +635,235 @@ def csv_to_database(connection, filename):
     """
     print("Working on file:" + filename)
     print("::::::::::::::::::::::::::::")
-    data_file = open(filename, 'r')
-    rows = data_file.readlines()
-    count = 0
-    for line in rows:
-        count += 1
-        if count > 1:
-            match = re.findall("weather", filename)
-            if  match:
-                insert_weather_row(connection, line, count)
-            else:
-                insert_data_row(connection, line, count)
-    data_file.close()
+    if only_empty_lines(filename):
+        print("File " + filename + "is empty! Nothing to load")
+    else:
+        data_file = open(filename, 'r')
+        rows = data_file.readlines()
+        count = 0
+        for line in rows:
+            count += 1
+            if count > 1:
+                match = re.findall("weather", filename)
+                if  match:
+                    insert_weather_row(connection, line, count)
+                else:
+                    insert_data_row(connection, line, count)
+        data_file.close()
 
     # Rename file we have loaded into database already
     new_file_name = filename + "_loaded"
     os.rename(filename, new_file_name)
 
+
+def get_f1_header_columns(tmp_file):
+    """
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    Author: Ulf Hellstrom, oraminute@gmail.com
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    """
+
+    """Load csv file and get the headers from the header row"""
+    with open(tmp_file, "r") as f:
+        header = f.readline().strip()
+        columns = header.split(",")
+        return columns
+
+
+def get_f1_data_lines(tmp_file):
+    """
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    Author: Ulf Hellstrom, oraminute@gmail.com
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    """
+
+    """Get the comma separated data"""
+    with open(tmp_file, "r") as f:
+        header = f.readline()
+        lines = f.readlines()
+        return lines
+
+
+def sort_header_list(lst):
+    """
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    Author: Ulf Hellstrom, oraminute@gmail.com
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    """
+
+    order = [
+        "Year",
+        "Race",
+        "Racetype",
+        "Datapoint",
+        "Time",
+        "DriverNumber",
+        "LapTime",
+        "LapNumber",
+        "Stint",
+        "PitOutTime",
+        "PitInTime",
+        "Sector1Time",
+        "Sector2Time",
+        "Sector3Time",
+        "Sector1SessionTime",
+        "Sector2SessionTime",
+        "Sector3SessionTime",
+        "SpeedI1",
+        "SpeedI2",
+        "SpeedFL",
+        "SpeedST",
+        "IsPersonalBest",
+        "Compound",
+        "TyreLife",
+        "FreshTyre",
+        "LapStartTime",
+        "Team",
+        "Driver",
+        "TrackStatus",
+        "IsAccurate",
+        "LapStartDate"
+    ]
+    sorted_lst = sorted(lst, key=lambda x: order.index(x))
+    return ','.join(sorted_lst)
+
+
+def get_f1_data_row_values(data_lines, headers):
+    """
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    Author: Ulf Hellstrom, oraminute@gmail.com
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    """
+    row_values = []
+    for line in data_lines:
+        if line.strip():  # check if line is not empty
+            values = line.strip().split(",")
+            for i in range(len(headers)):
+                row_values.append(headers[i])
+                row_values.append(values[i])
+    return row_values
+
+
+def fix_f1_telemetry_data_file(year, race, racetype):
+    """
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    Author: Ulf Hellstrom, oraminute@gmail.com
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    """
+    finale_filename = str(year) + "_" + str(race) + "_" + racetype + "_f1.csv"
+
+
+    # Cleanup data so we can load it into a oracle database
+
+    # open your csv and read as a text string
+
+    if file_exists(workingdir + "/data.csv"):
+
+        print("DEBUG: datafile genereated from f1data api...")
+        with open('data.csv', 'r') as infile:
+            my_csv_text = infile.read()
+
+        find_str = '0 days '
+        replace_str = ''
+
+        # substitute
+        new_csv_str = re.sub(find_str, replace_str, my_csv_text)
+        # open new file and save
+        new_csv_path = workingdir + '/temp.csv'  # or whatever path and name you want
+        with open(new_csv_path, 'w') as outfile:
+            outfile.write(new_csv_str)
+    else:
+        print("DEBUG: f1data api did not generate any data.csv, probaly due to missing or corrupt data....")
+
+
+    # Write a new file based on temp.csv with additional info
+
+    if file_exists(workingdir + "/" + "temp.csv"):
+
+        middle_csv_file = open(workingdir + "/" + "middlefile.csv", 'w')
+
+        # read temp.csv file and add season and race and type (Qualification or Race)
+
+        temp_file = open(workingdir + "/" +'temp.csv', 'r')
+        rows = temp_file.readlines()
+
+        count = 0
+        for line in rows:
+            count += 1
+            if count < 2:
+                new_line = "Year,Race,Racetype,Datapoint" + line
+                middle_csv_file.write(new_line)
+            if count > 1:
+                new_line = str(year) + ',' + str(race) + ',' + racetype + ',' + line
+                middle_csv_file.write(new_line)
+
+        middle_csv_file.close()
+        temp_file.close()
+
+        # Write the final where headers and data are sorted in correct order as per db table.
+        print("DEBUG: WORKING WITH MIDDLEFILE PRODUCING FINAL FILE")
+        print("***************************************************")
+        header_columns = get_f1_header_columns(workingdir + "/" + "middlefile.csv")
+        print("DEBUG: AFTER get_f1_header_columns")
+        sorted_header_columns = sort_header_list(header_columns)
+        print("DEBUG: AFTER sort_header_list")
+        print("DEBUG: SORTED HEADERS: " + sorted_header_columns)
+        print("***************************************************")
+        print("DEBUG: READING DATALINES")
+        print("***************************************************")
+        data_lines = get_f1_data_lines(workingdir + "/" + "middlefile.csv")
+        print("DEBUG: FINAL FILENAME: " + workingdir + "/" + finale_filename)
+        with open(workingdir + "/" + finale_filename, "w") as f:
+            f.write(sorted_header_columns + "\n")
+            for i in range(len(data_lines)):
+                row_values = get_f1_data_row_values([data_lines[i]], header_columns)
+                sorted_row_values = []
+                # Always sort the data in same order as the table columes in the database.
+                for j in [
+                    "Year",
+                    "Race",
+                    "Racetype",
+                    "Datapoint",
+                    "Time",
+                    "DriverNumber",
+                    "LapTime",
+                    "LapNumber",
+                    "Stint",
+                    "PitOutTime",
+                    "PitInTime",
+                    "Sector1Time",
+                    "Sector2Time",
+                    "Sector3Time",
+                    "Sector1SessionTime",
+                    "Sector2SessionTime",
+                    "Sector3SessionTime",
+                    "SpeedI1",
+                    "SpeedI2",
+                    "SpeedFL",
+                    "SpeedST",
+                    "IsPersonalBest",
+                    "Compound",
+                    "TyreLife",
+                    "FreshTyre",
+                    "LapStartTime",
+                    "Team",
+                    "Driver",
+                    "TrackStatus",
+                    "IsAccurate",
+                    "LapStartDate"
+                ]:
+                    for k in range(len(row_values)):
+                        if row_values[k] == j:
+                            sorted_row_values.append(row_values[k + 1])
+
+                f.write(",".join(sorted_row_values) + "\n")
+
+
+        remove_file(workingdir + "/data.csv")
+        remove_file(workingdir + "/temp.csv")
+
+    else:
+        print("DEBUG: no temp.csv generated from f1data api")
 
 def gen_f1_telemetry_data_file(year, race, racetype):
     """
@@ -621,7 +871,6 @@ def gen_f1_telemetry_data_file(year, race, racetype):
     Author: Ulf Hellstrom, oraminute@gmail.com
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     """
-    filename = str(year) + "_" + str(race) + "_" + racetype + "_f1.csv"
 
     # Enable the cache and fetch the qualification timings for this race
 
@@ -649,28 +898,6 @@ def gen_f1_telemetry_data_file(year, race, racetype):
         new_csv_path = 'temp.csv'  # or whatever path and name you want
         with open(new_csv_path, 'w') as outfile:
             outfile.write(new_csv_str)
-
-        # Write a new file based on temp.csv with additional info
-
-        final_csv_file = open(filename, 'w')
-
-        # read temp.csv file and add season and race and type (Qualification or Race)
-
-        temp_file = open('temp.csv', 'r')
-        rows = temp_file.readlines()
-
-        count = 0
-        for line in rows:
-            count += 1
-            if count < 2:
-                new_line = "Year,Race,Racetype,Datapoint" + line
-                final_csv_file.write(new_line)
-            if count > 1:
-                new_line = str(year) + ',' + str(race) + ',' + racetype + ',' + line
-                final_csv_file.write(new_line)
-
-        final_csv_file.close()
-        temp_file.close()
 
     except:
         pass
@@ -789,9 +1016,6 @@ def main():
     if run_rest is True:
 
         for val in season_list:
-            #if counter > 195:
-            #    print("Ergast allows max 200 calls per hour.. try again in an hour")
-            #    break
             year = ora.split_list(val, ',', 0)
             race = ora.split_list(val, ',', 1)
             racetype = 'FP1'
@@ -800,6 +1024,7 @@ def main():
             if check_if_race_exists(connection, int(year), int(race), racetype) is False:
                   counter += 1
                   gen_f1_telemetry_data_file(year, race, racetype)
+                  fix_f1_telemetry_data_file(year, race, racetype)
             else:
                 print("Data for " + str(year) + " race " + str(race) + " already exists skipping...")
             if check_if_weather_exists(connection,int(year),int(race),racetype) is False:
@@ -813,6 +1038,7 @@ def main():
                 counter += 1
                 print("Fetching F1 official telemetry  data for: " + year + "," + race + "," + racetype)
                 gen_f1_telemetry_data_file(year, race, racetype)
+                fix_f1_telemetry_data_file(year, race, racetype)
             else:
                 print("Data for " + str(year) + " race " + str(race) + " already exists skipping...")
             if check_if_weather_exists(connection,int(year),int(race),racetype) is False:
@@ -826,6 +1052,7 @@ def main():
                 counter += 1
                 print("Fetching F1 official telemetry  data for: " + year + "," + race + "," + racetype)
                 gen_f1_telemetry_data_file(year, race, racetype)
+                fix_f1_telemetry_data_file(year, race, racetype)
             else:
                 print("Data for " + str(year) + " race " + str(race) + " already exists skipping...")
             if check_if_weather_exists(connection,int(year),int(race),racetype) is False:
@@ -839,6 +1066,7 @@ def main():
                 counter += 1
                 print("Fetching F1 official telemetry  data for: " + year + "," + race + "," + racetype)
                 gen_f1_telemetry_data_file(year, race, racetype)
+                fix_f1_telemetry_data_file(year, race, racetype)
             else:
                 print("Data for " + str(year) + " race " + str(race) + " already exists skipping...")
             if check_if_weather_exists(connection,int(year),int(race),racetype) is False:
@@ -852,6 +1080,7 @@ def main():
                 counter += 1
                 print("Fetching F1 official telemetry  data for: " + year + "," + race + "," + racetype)
                 gen_f1_telemetry_data_file(year, race, racetype)
+                fix_f1_telemetry_data_file(year, race, racetype)
             else:
                 print("Data for " + str(year) + " race " + str(race) + " already exists skipping...")
             if check_if_weather_exists(connection,int(year),int(race),racetype) is False:
