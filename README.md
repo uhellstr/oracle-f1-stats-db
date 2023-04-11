@@ -197,6 +197,7 @@ SQL> @setup_objs.sql
  
 You will get some errors due to way the scripts where generated som indexes are duplicated. You can however just ignore them.
 
+
 # How to download the ergast data and built the database.
       
 Check the F1_LOGIK schema it will have a scheduled job called 'AUTO_ERGAST_LOAD_JOB'
@@ -210,5 +211,17 @@ I have provided a SQL script called "queries.sql" you can use for start analysin
 
 There is also som additional script for handling ORDS AutoRest written in python and python jupyter notebooks (E.g publish back the relational data as REST services). Scripts for allowing other users then F1_ACCESS to access data thru views and som python scripts for loading images of drivers,tracks etc and Jupyter Notebook examples on how to plot graphs using pandas and mathplotlib for the Formula 1 2021 season. See the included README_FIRST.txt for more information.
       
+New: f1_timingdata is a new python script that loads Formula 1 official timedata and weather data for you to analyse. There are lots of more datapointes like sector times, speed trap data etc included in the official f1 data allowing you to plot things like who was fastest in this sector and also includes laptime data for all practice sections, qualification and race.
+
 Enjoy and don't forget to travel to a formula 1 race. It will change your life forever!
       
+## How to run provided python code.
+
+I recommaned you install Python Ananconda for you user. 
+You also need a working instant client version installed and you have verified you can connect to the Oracle DB where you installed the Formula 1 schemas
+
+After succesfull installation install the following packages:
+
+
+- conda install cx_oracle
+- pip3 install fastf1 (if you plan to use the official Formula 1 timing data.)

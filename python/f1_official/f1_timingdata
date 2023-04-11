@@ -59,7 +59,7 @@ import fastf1 as ff1
 
 # Import oraclepackage module
 workingdir = os.getcwd()
-orapackdir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '')) + "/"
+orapackdir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "")) + "/"
 sys.path.append(orapackdir)
 from oraclepackage import oramodule as ora
 
@@ -72,21 +72,22 @@ class Logger(object):
     Author: Ulf Hellstrom, oraminute@gmail.com
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     """
+
     def __init__(self):
-        """ init logfile """
-        logfile = datetime.now().strftime('f1data_%Y_%m_%d_%H_%M.log')
+        """init logfile"""
+        logfile = datetime.now().strftime("f1data_%Y_%m_%d_%H_%M.log")
         self.terminal = sys.stdout
         self.log = open(logfile, "a")
 
     def write(self, message):
-        """ write to logfile """
+        """write to logfile"""
         self.terminal.write(message)
         self.log.write(message)
 
     def flush(self):
-        """ This flush method is needed for python 3 compatibility.
+        """This flush method is needed for python 3 compatibility.
          this handles the flush command by doing nothing.
-        you might want to specify some extra behavior here. """
+        you might want to specify some extra behavior here."""
         pass
 
 
@@ -121,9 +122,9 @@ def only_empty_lines(file_path):
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     """
 
-    with open(file_path, 'r') as f:
+    with open(file_path, "r") as f:
         for line in f:
-            if line.strip() != '':
+            if line.strip() != "":
                 return False
     return True
 
@@ -285,7 +286,9 @@ order by to_number(vfr.season),to_number(vfr.round) asc
     return season_list
 
 
-def check_lap_already_loaded(connection, season, race, racetype, lapnumber, team, driver):
+def check_lap_already_loaded(
+    connection, season, race, racetype, lapnumber, team, driver
+):
     """
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     Author: Ulf Hellstrom, oraminute@gmail.com
@@ -305,7 +308,9 @@ where season  = :season
   and driver = :driver
 """
     cur1 = connection.cursor()
-    cur1.execute(sql_stmt, [int(season), int(race), racetype, int(lapnumber), team, driver])
+    cur1.execute(
+        sql_stmt, [int(season), int(race), racetype, int(lapnumber), team, driver]
+    )
     # convert tuple to integer
     value = int(cur1.fetchone()[0])
     if value > 0:
@@ -355,7 +360,7 @@ def get_csv_files():
 
     for file in os.listdir(path):
         if file.endswith(".csv"):
-            if file not in ["data.csv", "temp.csv","middlefile.csv"]:
+            if file not in ["data.csv", "temp.csv", "middlefile.csv"]:
                 csv_list.append(file)
 
     return csv_list
@@ -369,7 +374,7 @@ def empty_to_int(empty_val):
     that is reprenseted as '' in the csv files to a valid int 0
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     """
-    return {'': '0'}.get(empty_val.strip(), empty_val)
+    return {"": "0"}.get(empty_val.strip(), empty_val)
 
 
 def empty_to_float(empty_val):
@@ -381,7 +386,7 @@ def empty_to_float(empty_val):
     python by convert '' to 0.0 that is a valid float value.
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     """
-    return {'': '0.0'}.get(empty_val.strip(), empty_val)
+    return {"": "0.0"}.get(empty_val.strip(), empty_val)
 
 
 def insert_data_row(connection, line, row):
@@ -428,7 +433,7 @@ values(:season
 
     # Split up comma separated rows into columns and cleanup/fix correct
     # datatypes and cleanup missing values.
-    chunks = line.split(',')
+    chunks = line.split(",")
     _season = int(empty_to_int(chunks[0]))
     _race = int(empty_to_int(chunks[1]))
     _racetype = chunks[2]
@@ -461,7 +466,9 @@ values(:season
     _isaccurate = chunks[29]
 
     # If data not already loaded into database insert the row!
-    if not check_lap_already_loaded(connection, _season, _race, _racetype, _lapnumber, _team, _driver):
+    if not check_lap_already_loaded(
+        connection, _season, _race, _racetype, _lapnumber, _team, _driver
+    ):
 
         # A very few rows might have very corrupt data.. We try to pass those few lines.
         # That's why the very stupid except pass until I figure out something better.
@@ -500,44 +507,62 @@ values(:season
             print("isaccurate:" + _isaccurate)
 
             cur1 = connection.cursor()
-            cur1.execute(sql_stmt,[_season
-                , _race
-                , _racetype
-                , _datapoint
-                , _time
-                , _drivernumber
-                , _laptime
-                , _lapnumber
-                , _stint
-                , _pitouttime
-                , _pitintime
-                , _sector1time
-                , _sector2time
-                , _sector3time
-                , _sector1sessiontime
-                , _sector2sessiontime
-                , _sector3sessiontime
-                , _speedi1
-                , _speedi2
-                , _speedfl
-                , _speedst
-                , _ispersonalbest
-                , _compound
-                , _tyrelife
-                , _freshtyre
-                , _lapstarttime
-                , _team
-                , _driver
-                , _trackstatus
-                , _isaccurate])
+            cur1.execute(
+                sql_stmt,
+                [
+                    _season,
+                    _race,
+                    _racetype,
+                    _datapoint,
+                    _time,
+                    _drivernumber,
+                    _laptime,
+                    _lapnumber,
+                    _stint,
+                    _pitouttime,
+                    _pitintime,
+                    _sector1time,
+                    _sector2time,
+                    _sector3time,
+                    _sector1sessiontime,
+                    _sector2sessiontime,
+                    _sector3sessiontime,
+                    _speedi1,
+                    _speedi2,
+                    _speedfl,
+                    _speedst,
+                    _ispersonalbest,
+                    _compound,
+                    _tyrelife,
+                    _freshtyre,
+                    _lapstarttime,
+                    _team,
+                    _driver,
+                    _trackstatus,
+                    _isaccurate,
+                ],
+            )
             connection.commit()
             cur1.close()
 
         except:
             pass
     else:
-        print("INFO::: Season:" + str(_season) + ",race:" + str(_race) + ",racetype:" + _racetype + ",lapnumber:" + str(
-            _lapnumber) + "," + _team + "," + _driver + " already exists in database, skipping!!")
+        print(
+            "INFO::: Season:"
+            + str(_season)
+            + ",race:"
+            + str(_race)
+            + ",racetype:"
+            + _racetype
+            + ",lapnumber:"
+            + str(_lapnumber)
+            + ","
+            + _team
+            + ","
+            + _driver
+            + " already exists in database, skipping!!"
+        )
 
 
 def insert_weather_row(connection, line, row):
@@ -567,7 +592,7 @@ values (:year
     # Split up comma separated rows into columns and cleanup/fix correct
     # atatypes and cleanup missing values.
 
-    chunks = line.split(',')
+    chunks = line.split(",")
     _year = int(empty_to_int(chunks[0]))
     _race = int(empty_to_int(chunks[1]))
     _racetype = chunks[2]
@@ -581,9 +606,10 @@ values (:year
     _winddirection = int(empty_to_int(chunks[10]))
     _windspeed = float(empty_to_float(chunks[11]))
 
-
     # If data not already loaded into database insert the row!
-    if not check_weatherdata_already_loaded(connection, _year, _race, _racetype, _datapoint):
+    if not check_weatherdata_already_loaded(
+        connection, _year, _race, _racetype, _datapoint
+    ):
 
         # A very few rows might have very corrupt data.. We try to pass those few lines.
         # That's why the very stupid except pass until I figure out something better.
@@ -604,18 +630,23 @@ values (:year
             print("windspeed:" + str(_windspeed))
 
             cur1 = connection.cursor()
-            cur1.execute(sql_stmt,[_year
-                ,_race
-                ,_racetype
-                ,_datapoint
-                ,_time
-                ,_airtemp
-                ,_humidity
-                ,_pressure
-                ,_rainfall
-                ,_tracktemp
-                ,_winddirection
-                ,_windspeed])
+            cur1.execute(
+                sql_stmt,
+                [
+                    _year,
+                    _race,
+                    _racetype,
+                    _datapoint,
+                    _time,
+                    _airtemp,
+                    _humidity,
+                    _pressure,
+                    _rainfall,
+                    _tracktemp,
+                    _winddirection,
+                    _windspeed,
+                ],
+            )
 
             connection.commit()
             cur1.close()
@@ -623,8 +654,17 @@ values (:year
         except:
             pass
     else:
-        print("INFO::: Season:" + str(_year) + ",race:" + str(_race) + ",racetype:" + _racetype + ",datappint:" + str(
-            _datapoint) + " already exists in database, skipping!!")
+        print(
+            "INFO::: Season:"
+            + str(_year)
+            + ",race:"
+            + str(_race)
+            + ",racetype:"
+            + _racetype
+            + ",datappint:"
+            + str(_datapoint)
+            + " already exists in database, skipping!!"
+        )
 
 
 def csv_to_database(connection, filename):
@@ -638,14 +678,14 @@ def csv_to_database(connection, filename):
     if only_empty_lines(filename):
         print("File " + filename + "is empty! Nothing to load")
     else:
-        data_file = open(filename, 'r')
+        data_file = open(filename, "r")
         rows = data_file.readlines()
         count = 0
         for line in rows:
             count += 1
             if count > 1:
                 match = re.findall("weather", filename)
-                if  match:
+                if match:
                     insert_weather_row(connection, line, count)
                 else:
                     insert_data_row(connection, line, count)
@@ -722,10 +762,10 @@ def sort_header_list(lst):
         "Driver",
         "TrackStatus",
         "IsAccurate",
-        "LapStartDate"
+        "LapStartDate",
     ]
     sorted_lst = sorted(lst, key=lambda x: order.index(x))
-    return ','.join(sorted_lst)
+    return ",".join(sorted_lst)
 
 
 def get_f1_data_row_values(data_lines, headers):
@@ -752,7 +792,6 @@ def fix_f1_telemetry_data_file(year, race, racetype):
     """
     finale_filename = str(year) + "_" + str(race) + "_" + racetype + "_f1.csv"
 
-
     # Cleanup data so we can load it into a oracle database
 
     # open your csv and read as a text string
@@ -760,31 +799,32 @@ def fix_f1_telemetry_data_file(year, race, racetype):
     if file_exists(workingdir + "/data.csv"):
 
         print("DEBUG: datafile genereated from f1data api...")
-        with open('data.csv', 'r') as infile:
+        with open("data.csv", "r") as infile:
             my_csv_text = infile.read()
 
-        find_str = '0 days '
-        replace_str = ''
+        find_str = "0 days "
+        replace_str = ""
 
         # substitute
         new_csv_str = re.sub(find_str, replace_str, my_csv_text)
         # open new file and save
-        new_csv_path = workingdir + '/temp.csv'  # or whatever path and name you want
-        with open(new_csv_path, 'w') as outfile:
+        new_csv_path = workingdir + "/temp.csv"  # or whatever path and name you want
+        with open(new_csv_path, "w") as outfile:
             outfile.write(new_csv_str)
     else:
-        print("DEBUG: f1data api did not generate any data.csv, probaly due to missing or corrupt data....")
-
+        print(
+            "DEBUG: f1data api did not generate any data.csv, probaly due to missing or corrupt data...."
+        )
 
     # Write a new file based on temp.csv with additional info
 
     if file_exists(workingdir + "/" + "temp.csv"):
 
-        middle_csv_file = open(workingdir + "/" + "middlefile.csv", 'w')
+        middle_csv_file = open(workingdir + "/" + "middlefile.csv", "w")
 
         # read temp.csv file and add season and race and type (Qualification or Race)
 
-        temp_file = open(workingdir + "/" +'temp.csv', 'r')
+        temp_file = open(workingdir + "/" + "temp.csv", "r")
         rows = temp_file.readlines()
 
         count = 0
@@ -794,7 +834,7 @@ def fix_f1_telemetry_data_file(year, race, racetype):
                 new_line = "Year,Race,Racetype,Datapoint" + line
                 middle_csv_file.write(new_line)
             if count > 1:
-                new_line = str(year) + ',' + str(race) + ',' + racetype + ',' + line
+                new_line = str(year) + "," + str(race) + "," + racetype + "," + line
                 middle_csv_file.write(new_line)
 
         middle_csv_file.close()
@@ -850,7 +890,7 @@ def fix_f1_telemetry_data_file(year, race, racetype):
                     "Driver",
                     "TrackStatus",
                     "IsAccurate",
-                    "LapStartDate"
+                    "LapStartDate",
                 ]:
                     for k in range(len(row_values)):
                         if row_values[k] == j:
@@ -858,12 +898,12 @@ def fix_f1_telemetry_data_file(year, race, racetype):
 
                 f.write(",".join(sorted_row_values) + "\n")
 
-
         remove_file(workingdir + "/data.csv")
         remove_file(workingdir + "/temp.csv")
 
     else:
         print("DEBUG: no temp.csv generated from f1data api")
+
 
 def gen_f1_telemetry_data_file(year, race, racetype):
     """
@@ -876,27 +916,27 @@ def gen_f1_telemetry_data_file(year, race, racetype):
 
     try:
 
-        ff1.Cache.enable_cache('cache')
+        ff1.Cache.enable_cache("cache")
         telemetry = ff1.get_session(int(year), int(race), racetype)
         laps = telemetry.load_laps(with_telemetry=True)
 
-        laps.to_csv('data.csv')
+        laps.to_csv("data.csv")
 
         # Cleanup data so we can load it into a oracle database
 
         # open your csv and read as a text string
-        with open('data.csv', 'r') as infile:
+        with open("data.csv", "r") as infile:
             my_csv_text = infile.read()
 
-        find_str = '0 days '
-        replace_str = ''
+        find_str = "0 days "
+        replace_str = ""
 
         # substitute
         new_csv_str = re.sub(find_str, replace_str, my_csv_text)
 
         # open new file and save
-        new_csv_path = 'temp.csv'  # or whatever path and name you want
-        with open(new_csv_path, 'w') as outfile:
+        new_csv_path = "temp.csv"  # or whatever path and name you want
+        with open(new_csv_path, "w") as outfile:
             outfile.write(new_csv_str)
 
     except:
@@ -916,37 +956,37 @@ def gen_f1_weather_data_file(year, race, racetype):
 
     try:
 
-        ff1.Cache.enable_cache('cache')
+        ff1.Cache.enable_cache("cache")
 
         session = ff1.get_session(int(year), int(race), racetype)
         session.load()
         weather = session.weather_data
-        weather.to_csv('data.csv')
+        weather.to_csv("data.csv")
 
         # Cleanup data so we can load it into a oracle database
 
         # open your csv and read as a text string
-        with open('data.csv', 'r') as infile:
+        with open("data.csv", "r") as infile:
             my_csv_text = infile.read()
 
-        find_str = '0 days '
-        replace_str = ''
+        find_str = "0 days "
+        replace_str = ""
 
         # substitute
         new_csv_str = re.sub(find_str, replace_str, my_csv_text)
 
         # open new file and save
-        new_csv_path = 'temp.csv'  # or whatever path and name you want
-        with open(new_csv_path, 'w') as outfile:
+        new_csv_path = "temp.csv"  # or whatever path and name you want
+        with open(new_csv_path, "w") as outfile:
             outfile.write(new_csv_str)
 
         # Write a new file based on temp.csv with additional info
 
-        final_csv_file = open(filename, 'w')
+        final_csv_file = open(filename, "w")
 
         # read temp.csv file and add season and race and type (Qualification or Race)
 
-        temp_file = open('temp.csv', 'r')
+        temp_file = open("temp.csv", "r")
         rows = temp_file.readlines()
 
         count = 0
@@ -956,7 +996,7 @@ def gen_f1_weather_data_file(year, race, racetype):
                 new_line = "Year,Race,Racetype,Datapoint" + line
                 final_csv_file.write(new_line)
             if count > 1:
-                new_line = str(year) + ',' + str(race) + ',' + racetype + ',' + line
+                new_line = str(year) + "," + str(race) + "," + racetype + "," + line
                 final_csv_file.write(new_line)
 
         final_csv_file.close()
@@ -992,7 +1032,7 @@ def main():
     username = input("Oracle Username: ")
     # Get password and encrypt it
     pwd = getpass.getpass(prompt="Please give " + username + " password: ")
-    pwd = base64.urlsafe_b64encode(pwd.encode('UTF-8)')).decode('ascii')
+    pwd = base64.urlsafe_b64encode(pwd.encode("UTF-8)")).decode("ascii")
     os.environ["DB_INFO"] = pwd
     tnsport = input("Give Listener port default (1521): ")
     # Enable logging output to log file
@@ -1001,8 +1041,10 @@ def main():
         print("Trying to connect to " + username + "/xxxxx@" + dbname + " as sysdba")
     else:
         print("Trying to connect to " + username + "/xxxxx@" + dbname)
-    db_pwd=base64.urlsafe_b64decode(os.environ["DB_INFO"].encode('UTF-8')).decode('ascii')
-    connection=ora.get_oracle_connection(dbname, tns , tnsport , username , db_pwd)
+    db_pwd = base64.urlsafe_b64decode(os.environ["DB_INFO"].encode("UTF-8")).decode(
+        "ascii"
+    )
+    connection = ora.get_oracle_connection(dbname, tns, tnsport, username, db_pwd)
     print("Connection successfull")
     print("Checking for F1_DATA.F1_OFFICIAL_TIMEDATA")
     time.sleep(2)
@@ -1016,79 +1058,33 @@ def main():
     if run_rest is True:
 
         for val in season_list:
-            year = ora.split_list(val, ',', 0)
-            race = ora.split_list(val, ',', 1)
-            racetype = 'FP1'
-            print("Fetching F1 official telemetry  data for: " + year + "," + race + "," + racetype)
-
-            if check_if_race_exists(connection, int(year), int(race), racetype) is False:
-                  counter += 1
-                  gen_f1_telemetry_data_file(year, race, racetype)
-                  fix_f1_telemetry_data_file(year, race, racetype)
-            else:
-                print("Data for " + str(year) + " race " + str(race) + " already exists skipping...")
-            if check_if_weather_exists(connection,int(year),int(race),racetype) is False:
-                  counter += 1
-                  gen_f1_weather_data_file(year, race, racetype)
-            else:
-                  print("Weather data for " + str(year) + " race " + str(race) + " already exists skipping...")
-
-            racetype = 'FP2'
-            if check_if_race_exists(connection, int(year), int(race), racetype) is False:
-                counter += 1
-                print("Fetching F1 official telemetry  data for: " + year + "," + race + "," + racetype)
-                gen_f1_telemetry_data_file(year, race, racetype)
-                fix_f1_telemetry_data_file(year, race, racetype)
-            else:
-                print("Data for " + str(year) + " race " + str(race) + " already exists skipping...")
-            if check_if_weather_exists(connection,int(year),int(race),racetype) is False:
-                  counter += 1
-                  gen_f1_weather_data_file(year, race, racetype)
-            else:
-                  print("Weather data for " + str(year) + " race " + str(race) + " already exists skipping...")
-
-            racetype = 'FP3'
-            if check_if_race_exists(connection, int(year), int(race), racetype) is False:
-                counter += 1
-                print("Fetching F1 official telemetry  data for: " + year + "," + race + "," + racetype)
-                gen_f1_telemetry_data_file(year, race, racetype)
-                fix_f1_telemetry_data_file(year, race, racetype)
-            else:
-                print("Data for " + str(year) + " race " + str(race) + " already exists skipping...")
-            if check_if_weather_exists(connection,int(year),int(race),racetype) is False:
-                  counter += 1
-                  gen_f1_weather_data_file(year, race, racetype)
-            else:
-                  print("Weather data for " + str(year) + " race " + str(race) + " already exists skipping...")
-
-            racetype = 'Q'
-            if check_if_race_exists(connection, int(year), int(race), racetype) is False:
-                counter += 1
-                print("Fetching F1 official telemetry  data for: " + year + "," + race + "," + racetype)
-                gen_f1_telemetry_data_file(year, race, racetype)
-                fix_f1_telemetry_data_file(year, race, racetype)
-            else:
-                print("Data for " + str(year) + " race " + str(race) + " already exists skipping...")
-            if check_if_weather_exists(connection,int(year),int(race),racetype) is False:
-                  counter += 1
-                  gen_f1_weather_data_file(year, race, racetype)
-            else:
-                  print("Weather data for " + str(year) + " race " + str(race) + " already exists skipping...")
-
-            racetype = 'R'
-            if check_if_race_exists(connection, int(year), int(race), racetype) is False:
-                counter += 1
-                print("Fetching F1 official telemetry  data for: " + year + "," + race + "," + racetype)
-                gen_f1_telemetry_data_file(year, race, racetype)
-                fix_f1_telemetry_data_file(year, race, racetype)
-            else:
-                print("Data for " + str(year) + " race " + str(race) + " already exists skipping...")
-            if check_if_weather_exists(connection,int(year),int(race),racetype) is False:
-                  counter += 1
-                  gen_f1_weather_data_file(year, race, racetype)
-            else:
-                  print("Weather data for " + str(year) + " race " + str(race) + " already exists skipping...")
-
+            year = ora.split_list(val, ",", 0)
+            race = ora.split_list(val, ",", 1)
+            racetype = "FP1"
+            for racetype in ["FP1", "FP2", "FP3", "Q", "R"]:
+                year, race = ora.split_list(val, ",", 0), ora.split_list(val, ",", 1)
+                print(
+                    f"Fetching F1 official telemetry data for: {year},{race},{racetype}"
+                )
+                if (
+                    check_if_race_exists(connection, int(year), int(race), racetype)
+                    is False
+                ):
+                    counter += 1
+                    gen_f1_telemetry_data_file(year, race, racetype)
+                    fix_f1_telemetry_data_file(year, race, racetype)
+                else:
+                    print(f"Data for {year} race {race} already exists skipping...")
+                if (
+                    check_if_weather_exists(connection, int(year), int(race), racetype)
+                    is False
+                ):
+                    counter += 1
+                    gen_f1_weather_data_file(year, race, racetype)
+                else:
+                    print(
+                        f"Weather data for {year} race {race} already exists skipping..."
+                    )
     file_list = get_csv_files()
     print("Loading data into the F1_DATA schema..")
     for filename in file_list:
