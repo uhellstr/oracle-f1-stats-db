@@ -217,7 +217,7 @@ Enjoy and don't forget to travel to a formula 1 race. It will change your life f
       
 ## How to run provided python code.
 
-I recommaned you install Python Ananconda for you user. 
+I recommaned you install Python Ananconda for you operating system user. This makes it easier to install correct python libraries and run jupyter notebooks. 
 You also need a working instant client version installed and you have verified you can connect to the Oracle DB where you installed the Formula 1 schemas
 
 After succesfull installation install the following packages:
@@ -225,3 +225,7 @@ After succesfull installation install the following packages:
 
 - conda install cx_oracle
 - pip3 install fastf1 (if you plan to use the official Formula 1 timing data.)
+- Before running any of the f1_official or wikif1data code you need to adjust the following in oraclepackage/oramodule.py
+  Change the following line to your path for Oracle Instant Client.
+  
+  "cx_Oracle.init_oracle_client(lib_dir="/Users/uhellstr/opt/instantclient_19_8")"" 

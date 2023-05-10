@@ -1,4 +1,3 @@
-
 DECLARE
   lv_count number := 0;
 BEGIN
