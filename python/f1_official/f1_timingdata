@@ -1073,11 +1073,14 @@ def main():
                     is False
                 ):
                     counter += 1
-                    header_columns = get_f1_header_columns(workingdir + "/" + "data.csv")
-                    print(header_columns)
-                    if check_airtemp_in_list(header_columns) == False:
-                        gen_f1_telemetry_data_file(year, race, racetype)    
-                        fix_f1_telemetry_data_file(year, race, racetype)
+                    gen_f1_telemetry_data_file(year, race, racetype)
+                    if file_exists(workingdir + "/" + "data.csv"):
+                        header_columns = get_f1_header_columns(workingdir + "/" + "data.csv")
+                        #check if data.csv is a telemetry of weather file
+                        if ( 
+                         check_airtemp_in_list(header_columns) is False
+                        ):    
+                            fix_f1_telemetry_data_file(year, race, racetype)
                 else:
                     print(f"Data for {year} race {race} already exists skipping...")
                 if (
