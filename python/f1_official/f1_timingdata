@@ -666,6 +666,8 @@ values (:year
             + " already exists in database, skipping!!"
         )
 
+def check_airtemp_in_list(lst):
+    return any("AirTemp" in s for s in lst)
 
 def csv_to_database(connection, filename):
     """
@@ -1071,8 +1073,11 @@ def main():
                     is False
                 ):
                     counter += 1
-                    gen_f1_telemetry_data_file(year, race, racetype)
-                    fix_f1_telemetry_data_file(year, race, racetype)
+                    header_columns = get_f1_header_columns(workingdir + "/" + "data.csv")
+                    print(header_columns)
+                    if check_airtemp_in_list(header_columns) == False:
+                        gen_f1_telemetry_data_file(year, race, racetype)    
+                        fix_f1_telemetry_data_file(year, race, racetype)
                 else:
                     print(f"Data for {year} race {race} already exists skipping...")
                 if (
