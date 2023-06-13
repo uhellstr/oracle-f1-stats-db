@@ -10,10 +10,7 @@ REM Below we have all views AutoRest enabled and some examples on how to query
 REM
 
 -- Rest Enable schema
-DECLARE
-  PRAGMA AUTONOMOUS_TRANSACTION;
 BEGIN
-
     ORDS.ENABLE_SCHEMA(p_enabled => TRUE,
                        p_schema => 'F1_REST_ACCESS',
                        p_url_mapping_type => 'BASE_PATH',
